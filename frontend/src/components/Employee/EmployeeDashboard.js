@@ -1,14 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import Navbar from '../Layout/Navbar';
 import Sidebar from '../Layout/Sidebar';
-import { taskAPI, shiftAPI, reportAPI } from '../../services/api';
+import { DashboardSkeleton } from '../Common/LoadingSkeleton';
+import { taskAPI, shiftAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: 'spring',
+            stiffness: 100
+        }
+    }
+};
 
 const EmployeeDashboard = () => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [shift, setShift] = useState(null);
-    const [recentReports, setRecentReports] = useState([]);
     const [stats, setStats] = useState({
         totalTasks: 0,
         pending: 0,
@@ -18,20 +41,15 @@ const EmployeeDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, [user]);
+    const fetchDashboardData = useCallback(async () => {
+        if (!user || !user.id) return;
 
-    const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            setError('');
 
-            const [tasksRes, reportsRes] = await Promise.all([
-                taskAPI.getAllTasks(),
-                reportAPI.getAllReports(),
-            ]);
-
-            const taskData = tasksRes.data.tasks;
+            const tasksRes = await taskAPI.getAllTasks();
+            const taskData = tasksRes.data.tasks || [];
             setTasks(taskData);
 
             setStats({
@@ -41,23 +59,24 @@ const EmployeeDashboard = () => {
                 completed: taskData.filter(t => t.status === 'completed').length,
             });
 
-            setRecentReports(reportsRes.data.reports.slice(0, 3));
-
             // Fetch shift
             try {
                 const shiftRes = await shiftAPI.getActiveShift(user.id);
                 setShift(shiftRes.data.shift);
             } catch (shiftErr) {
-                // No active shift, that's okay
-                console.log('No active shift found');
+                setShift(null);
             }
         } catch (err) {
             setError('Failed to fetch dashboard data');
-            console.error(err);
+            console.error('Dashboard error:', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const formatTime = (time) => {
         if (!time) return '';
@@ -75,7 +94,7 @@ const EmployeeDashboard = () => {
                 <div className="dashboard-content">
                     <Sidebar role="employee" />
                     <main className="main-content">
-                        <div className="loading">Loading dashboard...</div>
+                        <DashboardSkeleton />
                     </main>
                 </div>
             </div>
@@ -87,93 +106,138 @@ const EmployeeDashboard = () => {
             <Navbar />
             <div className="dashboard-content">
                 <Sidebar role="employee" />
-                <main className="main-content">
-                    <div className="page-header">
-                        <h1>Employee Dashboard</h1>
-                        <p>Welcome back, {user.fullName}!</p>
-                    </div>
+                <motion.main
+                    className="main-content"
+                    initial="hidden"
+                    animate="visible"
+                    variants={containerVariants}
+                >
+                    <motion.div className="page-header" variants={itemVariants}>
+                        <div>
+                            <h1>Employee Dashboard</h1>
+                            <p>Welcome back, {user?.fullName || 'User'}!</p>
+                        </div>
+                    </motion.div>
 
-                    {error && <div className="error-message">{error}</div>}
+                    {error && (
+                        <motion.div
+                            className="error-message"
+                            variants={itemVariants}
+                        >
+                            {error}
+                        </motion.div>
+                    )}
 
-                    <div className="stats-grid">
-                        <div className="stat-card">
+                    <motion.div className="stats-grid" variants={itemVariants}>
+                        <motion.div
+                            className="stat-card"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
                             <div className="stat-icon">📋</div>
                             <div className="stat-info">
                                 <h3>Total Tasks</h3>
                                 <p className="stat-value">{stats.totalTasks}</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="stat-card">
+                        <motion.div
+                            className="stat-card"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
                             <div className="stat-icon">⏳</div>
                             <div className="stat-info">
                                 <h3>Pending</h3>
                                 <p className="stat-value">{stats.pending}</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="stat-card">
+                        <motion.div
+                            className="stat-card"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
                             <div className="stat-icon">⚡</div>
                             <div className="stat-info">
                                 <h3>In Progress</h3>
                                 <p className="stat-value">{stats.inProgress}</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="stat-card">
+                        <motion.div
+                            className="stat-card"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
                             <div className="stat-icon">✅</div>
                             <div className="stat-info">
                                 <h3>Completed</h3>
                                 <p className="stat-value">{stats.completed}</p>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
 
-                    {shift && (
-                        <div className="shift-section">
-                            <h2>My Current Shift</h2>
-                            <div className="shift-card">
+                    <motion.div className="shift-section" variants={itemVariants}>
+                        <h2>My Current Shift</h2>
+                        {shift ? (
+                            <motion.div
+                                className="shift-card"
+                                whileHover={{ scale: 1.02 }}
+                                transition={{ type: 'spring', stiffness: 300 }}
+                            >
                                 <div className="shift-info">
-                                    <span className="shift-time">
-                                        {formatTime(shift.shift_start)} - {formatTime(shift.shift_end)}
-                                    </span>
-                                    <span className="shift-timezone">{shift.timezone}</span>
+                                    <div>
+                                        <div className="shift-time">
+                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                        </div>
+                                        <div className="shift-timezone">{shift.timezone}</div>
+                                    </div>
                                 </div>
+                            </motion.div>
+                        ) : (
+                            <div className="shift-card" style={{ background: '#f3f4f6', color: '#6b7280' }}>
+                                <p>No shift assigned yet. Please contact your administrator.</p>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </motion.div>
 
-                    <div className="recent-section">
+                    <motion.div className="recent-section" variants={itemVariants}>
                         <h2>Recent Tasks</h2>
                         {tasks.length === 0 ? (
                             <p>No tasks assigned yet.</p>
                         ) : (
                             <div className="task-list">
-                                {tasks.slice(0, 5).map((task) => (
-                                    <div key={task.id} className="task-item">
-                                        <div className="task-header">
-                                            <h3>{task.title}</h3>
+                                {tasks.slice(0, 5).map((task, index) => (
+                                    <motion.div
+                                        key={task.id}
+                                        className="task-item"
+                                        initial={{ x: -20, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        whileHover={{ x: 8 }}
+                                    >
+                                        <h3>{task.title}</h3>
+                                        <p>{task.description}</p>
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                                             <span className={`status-badge status-${task.status}`}>
                                                 {task.status.replace('_', ' ')}
                                             </span>
-                                        </div>
-                                        <p className="task-description">{task.description}</p>
-                                        <div className="task-meta">
                                             <span className={`priority-badge priority-${task.priority}`}>
                                                 {task.priority}
                                             </span>
-                                            {task.due_date && (
-                                                <span className="task-due">
-                                                    Due: {new Date(task.due_date).toLocaleDateString()}
-                                                </span>
-                                            )}
                                         </div>
-                                    </div>
+                                        {task.due_date && (
+                                            <div className="task-due">
+                                                Due: {new Date(task.due_date).toLocaleDateString()}
+                                            </div>
+                                        )}
+                                    </motion.div>
                                 ))}
                             </div>
                         )}
-                    </div>
-                </main>
+                    </motion.div>
+                </motion.main>
             </div>
         </div>
     );

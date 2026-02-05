@@ -10,6 +10,7 @@ const Sidebar = ({ role }) => {
         { path: '/admin/tasks', label: 'Task Management', icon: '📋' },
         { path: '/admin/shifts', label: 'Shift Management', icon: '⏰' },
         { path: '/admin/reports', label: 'Reports', icon: '📝' },
+        { path: '/admin/messages', label: 'Messages', icon: '💬' },
     ];
 
     const employeeLinks = [
@@ -18,6 +19,7 @@ const Sidebar = ({ role }) => {
         { path: '/employee/shift', label: 'My Shift', icon: '⏰' },
         { path: '/employee/reports', label: 'Submit Report', icon: '📝' },
         { path: '/employee/history', label: 'Report History', icon: '📚' },
+        { path: '/employee/messages', label: 'Messages', icon: '💬' },
     ];
 
     const links = role === 'admin' ? adminLinks : employeeLinks;

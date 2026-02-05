@@ -115,10 +115,9 @@ const getActiveShift = async (req, res) => {
             [empId]
         );
 
+        // Return null shift if not found instead of 404
         if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'No active shift found for this employee.'
-            });
+            return res.json({ shift: null });
         }
 
         res.json({ shift: result.rows[0] });

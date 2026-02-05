@@ -1,9 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Initialize Socket.io
+const { initializeSocket } = require('./config/socket');
+initializeSocket(server);
 
 // Middleware
 app.use(cors({
@@ -25,6 +31,7 @@ const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
 const shiftRoutes = require('./routes/shifts');
 const reportRoutes = require('./routes/reports');
+const messageRoutes = require('./routes/messages');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -32,6 +39,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -53,6 +61,7 @@ app.get('/', (req, res) => {
             tasks: '/api/tasks',
             shifts: '/api/shifts',
             reports: '/api/reports',
+            messages: '/api/messages',
         },
     });
 });
@@ -76,12 +85,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server (use server instead of app for Socket.io)
+server.listen(PORT, () => {
     console.log('========================================');
     console.log('Remote Work Management System - Backend');
     console.log('========================================');
     console.log(`✓ Server running on port ${PORT}`);
+    console.log(`✓ Socket.io enabled`);
     console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✓ Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
     console.log('========================================');

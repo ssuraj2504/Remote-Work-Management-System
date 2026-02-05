@@ -73,6 +73,7 @@ export const shiftAPI = {
     deleteShift: (id) => api.delete(`/shifts/${id}`),
 };
 
+
 // Report API
 export const reportAPI = {
     getAllReports: () => api.get('/reports'),
@@ -83,4 +84,20 @@ export const reportAPI = {
     getReportsStats: () => api.get('/reports/stats'),
 };
 
+// Message API
+export const messageAPI = {
+    getConversations: () => api.get('/messages/conversations'),
+    getMessages: (otherUserId, limit = 50, offset = 0) =>
+        api.get(`/messages/history/${otherUserId}`, {
+            params: { limit, offset }
+        }),
+    sendMessage: (recipientId, content) =>
+        api.post('/messages', { recipientId, content }),
+    markAsRead: (otherUserId) =>
+        api.put(`/messages/read/${otherUserId}`),
+    getUnreadCount: () => api.get('/messages/unread/count'),
+    getAllUsers: () => api.get('/messages/users'),
+};
+
 export default api;
+
